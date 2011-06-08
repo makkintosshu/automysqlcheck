@@ -7,21 +7,20 @@
 # hardcoded for ease of use with cron. Any databases you wish not to check
 # should be added to the DBEXCLUDE list, with a space in between each name.
 #
-# Note that DBEXCLUDE will only work with GNU sed, as BSD regular expressions
-# on Darwin seem to have some trouble with word boundary anchors.
-#
 # original version by sbray@csc.uvic.ca, UVic Fine Arts 2004
 #
 # modified by eyechart AT gmail.com and Mickael Sundberg at mickael@pischows.se and Jake Carr jake-+AT+-websitesource-+DOT+-com
 # (see Change Log for details)
 #
-# Some of this code was inspired from automysqlbackup.sh.2.0
-# http://sourceforge.net/projects/automysqlbackup/
-#
 #=====================================================================
 # Change Log
 #=====================================================================
 #
+# VER 1.4 - (2010-10-18)
+# Added I/O redirection to $LOGFILE
+# added flush & lock tables before check
+# modified the database exclusion so that it works also with Darwin/Mac OS X
+# Modified by Fabrizio La Rosa
 # VER 1.3 - (2006-12-02)
 # Added --host=$DBHOST in mysql commands, so it's useful for non-localhost situations
 # Jake Carr
@@ -51,50 +50,62 @@ MAILTO=root@localhost
 TYPE1= # extra params to CHECK_TABLE e.g. FAST
 TYPE2=
 CORRUPT=no # start by assuming no corruption
-DBNAMES="all" # or a list delimited by space
-DBEXCLUDE="" # or a list delimited by space
+DBNAMES="all" # either "all" or a list delimited by space
+DBEXCLUDE="" # either "" or a list delimited by space
 
+# I/O redirection...
+touch $LOGFILE
+exec 6>&1
+exec > $LOGFILE # stdout redirected to $LOGFILE
 echo -n "AutoMySQLCheck: "
 date
 echo "---------------------------------------------------------"; echo; echo
 
 # Get our list of databases to check...
-# NOTE: the DBEXCLUDE feature seemed to only work with Linux regex, GNU sed
-if test $DBNAMES = "all" ; then
-DBNAMES="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "show databases"`"
-for i in $DBEXCLUDE
-do
-DBNAMES=`echo $DBNAMES | sed "s/\b$i\b//g"`
+if [ "$DBNAMES" = "all" ] ; then
+DBNAMES=""
+ALLDB="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "show databases"`"
+for i in $ALLDB ; do
+INCLUDEDB=1
+for j in $DBEXCLUDE ; do
+if [ "$i" = "$j" ] ; then
+INCLUDEDB=0
+fi
+done
+if [ $INCLUDEDB -eq 1 ] ; then
+DBNAMES=$DBNAMES" "$i
+fi
 done
 fi
 
+# Lock tables
+mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "flush tables with read lock; flush logs"
 # Run through each database and execute our CHECK TABLE command for all tables
 # in a single pass - eyechart
-for i in $DBNAMES
-do
+for i in $DBNAMES ; do
 # echo the database we are working on
 echo "Database being checked:"
 echo -n "SHOW DATABASES LIKE '$i'" | mysql -t --host=$DBHOST -u$USER -p$PASSWORD $i; echo
 
 # Check all tables in one pass, instead of a loop
-# Use GAWK to put in comma separators, use SED to remove trailing comma
+# Use AWK to put in comma separators, use SED to remove trailing comma
 # Modified to only check MyISAM or InnoDB tables - eyechart
-DBTABLES="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD $i --batch -N -e "show table status;" | gawk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//'`"
+DBTABLES="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD $i --batch -N -e "show table status;" | awk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//'`"
 
 # Output in table form using -t option
-if [ ! "$DBTABLES" ]
-then
+if [ ! "$DBTABLES" ] ; then
 echo "NOTE: There are no tables to check in the $i database - skipping..."; echo; echo
 else
 echo "CHECK TABLE $DBTABLES $TYPE1 $TYPE2" | mysql --host=$DBHOST -t -u$USER -p$PASSWORD $i; echo; echo
 fi
 done
+# Unlock tables
+mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "unlock tables"
 
 exec 1>&6 6>&- # Restore stdout and close file descriptor #6
 
 # test our logfile for corruption in the database...
-for i in `cat $LOGFILE`
-do
+for i in `cat $LOGFILE` ; do
 if test $i = "warning" ; then
 CORRUPT=yes
 elif test $i = "error" ; then
