@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# This is a small bash script that checks all mysql databases for errors
+# and mails a log file to a specified email address. All variables are 
+# hardcoded for ease of use with cron. Any databases you wish not to check
+# should be added to the DBEXCLUDE list, with a space in between each name.
+#
+# Note that DBEXCLUDE will only work with GNU sed, as BSD regular expressions
+# on Darwin seem to have some trouble with word boundary anchors.
+# 
+# sbray@csc.uvic.ca, UVic Fine Arts 2004. 
+# Some of this code was inspired from automysqlbackup.sh.2.0 
+# http://sourceforge.net/projects/automysqlbackup/
+
+# system variables (change these according to your system)
+USER=username
+PASSWORD=password
+DBHOST=localhost
+LOGFILE=./mysql_check.log
+MAILTO=root@localhost
+TYPE1= # extra params to CHECK_TABLE e.g. FAST
+TYPE2= 
+CORRUPT=no # start by assuming no corruption
+DBNAMES="all" # or a list delimited by space
+DBEXCLUDE="" # or a list delimited by space
+
+# I/O redirection...
+touch $LOGFILE 
+exec 6>&1
+exec > $LOGFILE	 # stdout redirected to $LOGFILE
+
+echo -n "Logfile: "
+date
+echo "---------------------------------------------------------"
+echo
+
+# Get our list of databases to check...
+# NOTE: the DBEXCLUDE feature seemed to only work with Linux regex, GNU sed
+if test $DBNAMES = "all" ; then
+DBNAMES="`mysql --user=$USER --password=$PASSWORD --batch -N -e "show databases"`"
+for i in $DBEXCLUDE
+do
+DBNAMES=`echo $DBNAMES | sed "s/\b$i\b//g"`
+done
+fi
+
+# Run through each database and execute our CHECK TABLE command for each table...
+for i in $DBNAMES
+do 
+# to fancy up our log file
+echo ""
+echo "Database: $i"
+echo "---------------------------------------------------------"
+
+DBTABLES="`mysql --user=$USER --password=$PASSWORD $i --batch -N -e "show tables"`"
+
+for j in $DBTABLES
+do
+echo "CHECK TABLE $j $TYPE1 $TYPE2" | mysql -u$USER -p$PASSWORD $i
+done
+echo ""
+done
+
+exec 1>&6 6>&-	 # Restore stdout and close file descriptor #6
+
+# test our logfile for corruption in the database...
+for i in `cat $LOGFILE`
+do
+if test $i = "warning" ; then
+CORRUPT=yes
+elif test $i = "error" ; then
+CORRUPT=yes
+fi
+done
+
+# send off our results...
+if test $CORRUPT = "yes" ; then
+cat $LOGFILE | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-`date`" $MAILTO
+else
+cat $LOGFILE | mail -s "MySQL CHECK Log [PASSED OK] for $HOST-`date`" $MAILTO
+fi
