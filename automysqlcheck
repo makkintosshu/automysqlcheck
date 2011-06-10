@@ -43,81 +43,81 @@
 
 # system variables (change these according to your system)
 PATH=/usr/local/bin:/usr/bin:/bin:$PATH
-USER=root
-PASSWORD=
-DBHOST=localhost
-LOGFILE=/var/log/automysqlcheck.log
-MAILTO=root@localhost
-TYPE1= # extra params to CHECK_TABLE e.g. FAST
-TYPE2=
-CORRUPT=no # start by assuming no corruption
-DBNAMES="all" # either "all" or a list delimited by space
-DBEXCLUDE="" # either "" or a list delimited by space
+user=root
+password=
+dbhost=localhost
+logfile=/var/log/automysqlcheck.log
+mailto=root@localhost
+type1= # extra params to CHECK_TABLE e.g. FAST
+type2=
+corrupt=no # start by assuming no corruption
+dbnames="all" # either "all" or a list delimited by space
+dbexclude="" # either "" or a list delimited by space
 
 # I/O redirection...
-touch $LOGFILE
+touch $logfile
 exec 6>&1
-exec > $LOGFILE # stdout redirected to $LOGFILE
+exec > $logfile # stdout redirected to $LOGFILE
 echo -n "AutoMySQLCheck: "
 date
 echo "---------------------------------------------------------"; echo; echo
 
 # Get our list of databases to check...
-if [ "$DBNAMES" = "all" ] ; then
-	DBNAMES=""
-	ALLDB="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "show databases"`"
-	for i in $ALLDB ; do
-		INCLUDEDB=1
-		for j in $DBEXCLUDE ; do
+if [ "$dbnames" = "all" ] ; then
+	dbnames=""
+	alldb="$(mysql --host=$dbhost --user=$user --password=$password --batch -N -e "show databases")"
+	for i in $alldb ; do
+		includedb=1
+		for j in $dbexclude ; do
 			if [ "$i" = "$j" ] ; then
-				INCLUDEDB=0
+				includedb=0
 			fi
 		done
-		if [ $INCLUDEDB -eq 1 ] ; then
-			DBNAMES=$DBNAMES" "$i
+		if [ $includedb -eq 1 ] ; then
+			dbnames="$dbnames $i"
 		fi
 	done
 fi
 
 # Lock tables
-mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "flush tables with read lock; flush logs"
+mysql --host=$dbhost --user=$user --password=$password --batch -N -e "flush tables with read lock; flush logs"
 # Run through each database and execute our CHECK TABLE command for all tables
 # in a single pass - eyechart
-for i in $DBNAMES ; do
+for i in $dbnames ; do
 	# echo the database we are working on
 	echo "Database being checked:"
-	echo -n "SHOW DATABASES LIKE '$i'" | mysql -t --host=$DBHOST -u$USER -p$PASSWORD $i; echo
+	echo -n "SHOW DATABASES LIKE '$i'" | mysql -t --host=$dbhost -u$user -p$password $i; echo
 	
 	# Check all tables in one pass, instead of a loop
 	# Use AWK to put in comma separators, use SED to remove trailing comma
 	# Modified to only check MyISAM or InnoDB tables - eyechart
-	DBTABLES="`mysql --host=$DBHOST --user=$USER --password=$PASSWORD $i --batch -N -e "show table status;" | awk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//'`"
+	dbtables="$(mysql --host=$dbhost --user=$user --password=$password $i --batch -N -e "show table status;" | awk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//')"
 	
 	# Output in table form using -t option
-	if [ ! "$DBTABLES" ] ; then
+	if [ ! "$dbtables" ] ; then
 		echo "NOTE: There are no tables to check in the $i database - skipping..."; echo; echo
 	else
-		echo "CHECK TABLE $DBTABLES $TYPE1 $TYPE2" | mysql --host=$DBHOST -t -u$USER -p$PASSWORD $i; echo; echo
+		echo "CHECK TABLE $dbtables $type1 $type2" | mysql --host=$dbhost -t -u$user -p$password $i; echo; echo
 	fi
 done
 # Unlock tables
-mysql --host=$DBHOST --user=$USER --password=$PASSWORD --batch -N -e "unlock tables"
+mysql --host=$dbhost --user=$user --password=$password --batch -N -e "unlock tables"
 
 exec 1>&6 6>&- # Restore stdout and close file descriptor #6
 
 # test our logfile for corruption in the database...
-for i in `cat $LOGFILE` ; do
-	if test $i = "warning" ; then
-		CORRUPT=yes
-	elif test $i = "error" ; then
-		CORRUPT=yes
+for i in $(cat $logfile) ; do
+	if [ $i = "warning" ] ; then
+		corrupt=yes
+	elif [ $i = "error" ] ; then
+		corrupt=yes
 	fi
 done
 
 # Send off our results...
-if test $CORRUPT = "yes" ; then
-	cat $LOGFILE | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-`date`" $MAILTO
+if [ $corrupt = "yes" ] ; then
+	cat $logfile | mail -s "MySQL CHECK Log [ERROR FOUND] for $dbhost-$(date)" $mailto
 else
-	cat $LOGFILE | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-`date`" $MAILTO
+	cat $logfile | mail -s "MySQL CHECK Log [PASSED OK] for $dbhost-$(date)" $mailto
 fi
 
