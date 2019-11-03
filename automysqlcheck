@@ -51,7 +51,7 @@
 
 # system variables (change these according to your system)
 PATH=/usr/local/bin:/usr/bin:/bin:$PATH
-OPTIONS_FILE="${HOME}/.my.cnf"
+OPTIONS_FILE="${OPTIONS_FILE:="${HOME}/.my.cnf"}"
 dbhost=localhost
 logfile=/var/log/automysqlcheck.log
 mailto=root@localhost
