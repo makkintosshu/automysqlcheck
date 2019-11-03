@@ -52,7 +52,7 @@
 # system variables (change these according to your system)
 PATH=/usr/local/bin:/usr/bin:/bin:$PATH
 OPTIONS_FILE="${OPTIONS_FILE:="${HOME}/.my.cnf"}"
-dbhost=localhost
+DBHOST="${DBHOST:="localhost"}"
 logfile=/var/log/automysqlcheck.log
 mailto=root@localhost
 type1= # extra params to CHECK_TABLE e.g. FAST
@@ -72,7 +72,7 @@ echo "---------------------------------------------------------"; echo; echo
 # Get our list of databases to check...
 if [ "$dbnames" = "all" ] ; then
 	dbnames=""
-	alldb="$(mysql --defaults-file="$OPTIONS_FILE" --host=$dbhost --batch -N -e "SHOW DATABASES;")"
+	alldb="$(mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "SHOW DATABASES;")"
 	for i in $alldb ; do
 		includedb=1
 		for j in $dbexclude ; do
@@ -87,28 +87,28 @@ if [ "$dbnames" = "all" ] ; then
 fi
 
 # Lock tables
-mysql --defaults-file="$OPTIONS_FILE" --host=$dbhost --batch -N -e "FLUSH TABLES WITH READ LOCK; FLUSH LOGS;"
+mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "FLUSH TABLES WITH READ LOCK; FLUSH LOGS;"
 # Run through each database and execute our CHECK TABLE command for all tables
 # in a single pass - eyechart
 for i in $dbnames ; do
 	# echo the database we are working on
 	echo "Database being checked:"
-	mysql --defaults-file="$OPTIONS_FILE" -t --host=$dbhost $i -e "SHOW DATABASES LIKE '$i';"
+	mysql --defaults-file="$OPTIONS_FILE" -t --host=$DBHOST $i -e "SHOW DATABASES LIKE '$i';"
 	
 	# Check all tables in one pass, instead of a loop
 	# Use AWK to put in comma separators, use SED to remove trailing comma
 	# Modified to only check MyISAM or InnoDB tables - eyechart
-	dbtables="$(mysql --defaults-file="$OPTIONS_FILE" --host=$dbhost $i --batch -N -e "SHOW TABLE STATUS;" | awk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//')"
+	dbtables="$(mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST $i --batch -N -e "SHOW TABLE STATUS;" | awk 'BEGIN {ORS=", " } $2 == "MyISAM" || $2 == "InnoDB"{print "\`" $1 "\`"}' | sed 's/, $//')"
 	
 	# Output in table form using -t option
 	if [ ! "$dbtables" ] ; then
 		echo "NOTE: There are no tables to check in the $i database - skipping..."; echo; echo
 	else
-		mysql --defaults-file="$OPTIONS_FILE" --host=$dbhost -t $i -e "CHECK TABLE $dbtables $type1 $type2;"; echo; echo
+		mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST -t $i -e "CHECK TABLE $dbtables $type1 $type2;"; echo; echo
 	fi
 done
 # Unlock tables
-mysql --defaults-file="$OPTIONS_FILE" --host=$dbhost --batch -N -e "UNLOCK TABLES;"
+mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "UNLOCK TABLES;"
 
 exec 1>&6 6>&- # Restore stdout and close file descriptor #6
 
@@ -123,8 +123,8 @@ done
 
 # Send off our results...
 if [ $corrupt = "yes" ] ; then
-	cat $logfile | mail -s "MySQL CHECK Log [ERROR FOUND] for $dbhost-$(date)" $mailto
+	cat $logfile | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-$(date)" $mailto
 else
-	cat $logfile | mail -s "MySQL CHECK Log [PASSED OK] for $dbhost-$(date)" $mailto
+	cat $logfile | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-$(date)" $mailto
 fi
 
