@@ -57,9 +57,10 @@ LOGFILE="${LOGFILE:="/var/log/automysqlcheck.log"}"
 MAILTO="${MAILTO:="root@localhost"}"
 type1= # extra params to CHECK_TABLE e.g. FAST
 type2=
-corrupt=no # start by assuming no corruption
-dbnames="all" # either "all" or a list delimited by space
+DBNAMES="${DBNAMES:="all"}" # either "all" or a list delimited by space
 dbexclude="" # either "" or a list delimited by space
+
+corrupt=no # start by assuming no corruption
 
 # I/O redirection...
 touch $LOGFILE
@@ -70,8 +71,8 @@ date
 echo "---------------------------------------------------------"; echo; echo
 
 # Get our list of databases to check...
-if [ "$dbnames" = "all" ] ; then
-	dbnames=""
+if [ "$DBNAMES" = "all" ] ; then
+	DBNAMES=""
 	alldb="$(mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "SHOW DATABASES;")"
 	for i in $alldb ; do
 		includedb=1
@@ -81,7 +82,7 @@ if [ "$dbnames" = "all" ] ; then
 			fi
 		done
 		if [ $includedb -eq 1 ] ; then
-			dbnames="$dbnames $i"
+			DBNAMES="$DBNAMES $i"
 		fi
 	done
 fi
@@ -90,7 +91,7 @@ fi
 mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "FLUSH TABLES WITH READ LOCK; FLUSH LOGS;"
 # Run through each database and execute our CHECK TABLE command for all tables
 # in a single pass - eyechart
-for i in $dbnames ; do
+for i in $DBNAMES ; do
 	# echo the database we are working on
 	echo "Database being checked:"
 	mysql --defaults-file="$OPTIONS_FILE" -t --host=$DBHOST $i -e "SHOW DATABASES LIKE '$i';"
