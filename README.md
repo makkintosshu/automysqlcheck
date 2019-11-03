@@ -4,14 +4,14 @@ This is a small bash script that checks all mysql databases for errors and mails
 
 ## USAGE
 
-1) Modify `automysqlcheck` script to specify the following configuration values:
+1) Use the following environment variables to override default configuration values:
 
-    * `OPTIONS_FILE` - The path to a MySQL options file containing auth credentials (see [Using Options Files](https://dev.mysql.com/doc/refman/8.0/en/option-files.html))
-    * `dbhost` - The MySQL server hostname (or `localhost`)
-    * `logfile` - The path where you'd like to save the `automysqlcheck` log file
-    * `mailto` - The email address to send the summary to upon completion
-    * `dbnames` - A space delimited list of database names to check (or `all`)
-    * `dbexclude` - A space delimited list of database names to skip
+    * `OPTIONS_FILE` - The path to a MySQL options file containing auth credentials (default : `~/.my.cnf`; see [Using Options Files](https://dev.mysql.com/doc/refman/8.0/en/option-files.html))
+    * `DBHOST` - The MySQL server hostname (default: `localhost`)
+    * `LOGFILE` - The path where you'd like to save the `automysqlcheck` log file (default: /var/log/automysqlcheck.log`)
+    * `MAILTO` - The email address to send the summary to upon completion (default: `root@localhost`)
+    * `DBNAMES` - A space delimited list of database names to check (or `all`; default: `all`)
+    * `DBEXCLUDE` - A space delimited list of database names to skip (default: none)
 
 2) Create a MySQL options file at the path specified above which contains auth credentials, for example:
 
@@ -19,7 +19,7 @@ This is a small bash script that checks all mysql databases for errors and mails
         user=root
         password=SECRET_PASSWORD
 
-3) Add `automysqlcheck` to your crontab or update & install the macOS launchd .plist file
+3) Add `automysqlcheck` to your crontab or install the macOS launchd .plist file, specifying environment variables to override any necessary configuration values.
 
 ## LICENSE
 
