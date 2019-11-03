@@ -8,6 +8,13 @@
 	        <array> 
 	                <string>/path/to/automysqlcheck</string>
 	        </array>
+		<key>EnvironmentVariables</key>
+		<dict>
+			<key>DBHOST</key>
+			<string>localhost</string>
+			<key>DBNAMES</key>
+			<string>all</string>
+		</dict>
 	        <key>StartCalendarInterval</key>
 	        <dict>  
 	                <key>Hour</key>
