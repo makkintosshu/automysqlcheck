@@ -15,9 +15,9 @@ This is a small bash script that checks all mysql databases for errors and mails
 
 2) Create a MySQL options file at the path specified above which contains auth credentials, for example:
 
-    [mysql]
-    user=root
-    password=SECRET_PASSWORD
+        [mysql]
+        user=root
+        password=SECRET_PASSWORD
 
 3) Add `automysqlcheck` to your crontab or update & install the macOS launchd .plist file
 
