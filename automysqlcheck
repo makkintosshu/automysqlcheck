@@ -10,12 +10,17 @@
 # Original version by sbray@csc.uvic.ca, UVic Fine Arts 2004
 #
 # Modified by eyechart AT gmail.com, Mickael Sundberg at mickael@pischows.se,
-# Jake Carr jake-+AT+-websitesource-+DOT+-com, Fabrizio La Rosa
+# Jake Carr jake-+AT+-websitesource-+DOT+-com, Fabrizio La Rosa, Morgan
+# Aldridge morgant-+AT+-makkintosshu-+DOT+-com
 # 
 #=====================================================================
 # Change Log
 #=====================================================================
 #
+# VER 1.5 - (2011-06-10)
+#     Modified to use more modern & consistent bash conventions
+#     Switched to using the mysql '-e' option to execute commands in all cases
+#     Modified by Morgan Aldridge
 # VER 1.4 - (2010-10-18)
 #     Added I/O redirection to $LOGFILE
 #     Added flush & lock tables before check
