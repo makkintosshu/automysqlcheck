@@ -10,6 +10,7 @@ This is a small bash script that checks all mysql databases for errors and mails
     * `DBHOST` - The MySQL server hostname (default: `localhost`)
     * `LOGFILE` - The path where you'd like to save the `automysqlcheck` log file (default: /var/log/automysqlcheck.log`)
     * `MAILTO` - The email address to send the summary to upon completion (default: `root@localhost`)
+    * `MAILFROM` - The email address to send the summary from
     * `DBNAMES` - A space delimited list of database names to check (or `all`; default: `all`)
     * `DBEXCLUDE` - A space delimited list of database names to skip (default: none)
 
