@@ -3,9 +3,9 @@
 # automysqlcheck.sh
 #
 # This is a small bash script that checks all mysql databases for errors
-# and mails a log file to a specified email address. All variables are
-# hardcoded for ease of use with cron. Any databases you wish not to check
-# should be added to the DBEXCLUDE list, with a space in between each name.
+# and mails a log file to a specified email address. Any databases you wish
+# not to check should be added to the DBEXCLUDE list, with a space in
+# between each name.
 #
 # Original version by sbray@csc.uvic.ca, UVic Fine Arts 2004
 #
