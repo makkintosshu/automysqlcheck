@@ -54,7 +54,7 @@ PATH=/usr/local/bin:/usr/bin:/bin:$PATH
 OPTIONS_FILE="${OPTIONS_FILE:="${HOME}/.my.cnf"}"
 DBHOST="${DBHOST:="localhost"}"
 LOGFILE="${LOGFILE:="/var/log/automysqlcheck.log"}"
-mailto=root@localhost
+MAILTO="${MAILTO:="root@localhost"}"
 type1= # extra params to CHECK_TABLE e.g. FAST
 type2=
 corrupt=no # start by assuming no corruption
@@ -123,8 +123,8 @@ done
 
 # Send off our results...
 if [ $corrupt = "yes" ] ; then
-	cat $LOGFILE | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-$(date)" $mailto
+	cat $LOGFILE | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-$(date)" $MAILTO
 else
-	cat $LOGFILE | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-$(date)" $mailto
+	cat $LOGFILE | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-$(date)" $MAILTO
 fi
 
