@@ -57,8 +57,8 @@ LOGFILE="${LOGFILE:="/var/log/automysqlcheck.log"}"
 MAILTO="${MAILTO:="root@localhost"}"
 type1= # extra params to CHECK_TABLE e.g. FAST
 type2=
-DBNAMES="${DBNAMES:="all"}" # either "all" or a list delimited by space
-dbexclude="" # either "" or a list delimited by space
+DBNAMES="${DBNAMES:="all"}"  # either "all" or a list delimited by space
+DBEXCLUDE="${DBEXCLUDE:=""}" # either "" or a list delimited by space
 
 corrupt=no # start by assuming no corruption
 
@@ -76,7 +76,7 @@ if [ "$DBNAMES" = "all" ] ; then
 	alldb="$(mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "SHOW DATABASES;")"
 	for i in $alldb ; do
 		includedb=1
-		for j in $dbexclude ; do
+		for j in $DBEXCLUDE ; do
 			if [ "$i" = "$j" ] ; then
 				includedb=0
 			fi
