@@ -53,7 +53,7 @@
 PATH=/usr/local/bin:/usr/bin:/bin:$PATH
 OPTIONS_FILE="${OPTIONS_FILE:="${HOME}/.my.cnf"}"
 DBHOST="${DBHOST:="localhost"}"
-logfile=/var/log/automysqlcheck.log
+LOGFILE="${LOGFILE:="/var/log/automysqlcheck.log"}"
 mailto=root@localhost
 type1= # extra params to CHECK_TABLE e.g. FAST
 type2=
@@ -62,9 +62,9 @@ dbnames="all" # either "all" or a list delimited by space
 dbexclude="" # either "" or a list delimited by space
 
 # I/O redirection...
-touch $logfile
+touch $LOGFILE
 exec 6>&1
-exec > $logfile # stdout redirected to $LOGFILE
+exec > $LOGFILE # stdout redirected to $LOGFILE
 echo -n "AutoMySQLCheck: "
 date
 echo "---------------------------------------------------------"; echo; echo
@@ -112,8 +112,8 @@ mysql --defaults-file="$OPTIONS_FILE" --host=$DBHOST --batch -N -e "UNLOCK TABLE
 
 exec 1>&6 6>&- # Restore stdout and close file descriptor #6
 
-# test our logfile for corruption in the database...
-for i in $(cat $logfile) ; do
+# test our LOGFILE for corruption in the database...
+for i in $(cat $LOGFILE) ; do
 	if [ $i = "warning" ] ; then
 		corrupt=yes
 	elif [ $i = "error" ] ; then
@@ -123,8 +123,8 @@ done
 
 # Send off our results...
 if [ $corrupt = "yes" ] ; then
-	cat $logfile | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-$(date)" $mailto
+	cat $LOGFILE | mail -s "MySQL CHECK Log [ERROR FOUND] for $DBHOST-$(date)" $mailto
 else
-	cat $logfile | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-$(date)" $mailto
+	cat $LOGFILE | mail -s "MySQL CHECK Log [PASSED OK] for $DBHOST-$(date)" $mailto
 fi
 
